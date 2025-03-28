@@ -8,8 +8,6 @@ import hashlib
 import base64
 from cryptography.fernet import Fernet
 
-from Server import handle_login, client
-
 
 def encrypt_string(key: str, data: str) -> str:
     # Step 1: Ensure the key is 32 bytes for Fernet
