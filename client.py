@@ -163,6 +163,7 @@ class PasswordsWindow(tk.Tk):
                 messagebox.showinfo("Success", f"Password for {website} removed successfully.")
                 self.encrypted_passwords.pop(website)
                 self.clear_window()
+
                 self.populate_password_labels() if self.encrypted_passwords else self.destroy()
             else:
                 messagebox.showerror("Error", f"Failed to remove password for {website}")
@@ -207,7 +208,7 @@ class AskPasswordDialog(tk.Toplevel):
 
     def authenticate(self):
         """Authenticate the entered password."""
-        login_password = self.login_password.get()
+        login_password = self.login_password.get().strip()
         if login_password:
             response = self.client.send_request({"command": "login", "username": self.username, "password": self.hash_password(login_password)})
             if response and response.get("status") == "success":
@@ -258,9 +259,9 @@ class AddPasswordWindow(tk.Tk):
 
     def add_password(self):
         """Handle logic to encrypt and send the new password to server."""
-        website = self.entry_website.get()
-        website_password = self.website_password.get()
-        login_password = self.login_password.get()
+        website = self.entry_website.get().strip()
+        website_password = self.website_password.get().strip()
+        login_password = self.login_password.get().strip()
 
         if not website or not website_password or not login_password:
             messagebox.showwarning("Input Error", "Please fill all fields")
@@ -360,8 +361,8 @@ class SignUpWindow(tk.Tk):
         self.config(bg="#f4f4f4")
 
         # Set icon
-        icon = PhotoImage(file="assets/logo.png")
-        self.iconphoto(False, icon)
+        #icon = PhotoImage(file="assets/logo.png")
+        #self.iconphoto(False, icon)
 
         ttk.Label(self, text="Username:").pack(pady=5)
         self.entry_signup_username = ttk.Entry(self)
@@ -385,11 +386,17 @@ class SignUpWindow(tk.Tk):
 
     def handle_signup(self):
         """Send signup request to server."""
-        username = self.entry_signup_username.get()
-        password = self.entry_signup_password.get()
+        username = self.entry_signup_username.get().strip()
+        password = self.entry_signup_password.get().strip()
 
         if not username or not password:
-            messagebox.showwarning("Input Error", "Please fill all fields")
+            messagebox.showwarning("Input Error", "Please fill all fields",)
+            self.focus_force()
+            return
+
+        if not self.is_valid_password(password):
+            messagebox.showwarning("Password Error", "The password must be at least 8 characters and have upper case and lower case letters, numbers, and special character, and cannot contains following characters")
+            self.focus_force()
             return
 
         response = self.client.send_request({"command": "signup", "username": username, "password": self.hash_password(password)})
@@ -399,6 +406,33 @@ class SignUpWindow(tk.Tk):
         else:
             messagebox.showerror("Sign Up Failed", "Signup failed. Please try again.")
 
+    def is_valid_password(self,password:str):
+        #check that the passwords has at least 8 characters
+        if len(password)<8:
+            return False
+        #check the password doesnt have following characters
+        for i in range(1,len(password)):
+            if ord(password[i-1]) +1 == ord(password[i]):
+                return False
+
+        #set requirements for password
+        has_lower_case = False
+        has_upper_case = False
+        has_number = False
+        has_special_char = False
+        #check requirements for each character in the password string
+        for char in password:
+            if char.islower():
+                has_lower_case = True
+            if char.isupper():
+                has_upper_case = True
+            if char.isdigit():
+                has_number = True
+            if not char.isalnum():
+                has_special_char = True
+        #check that the password has all the requirments
+        if has_number and has_upper_case and has_lower_case and has_special_char:
+            return True
     def hash_password(self, password):
         """Hash the password using SHA-256."""
         return hashlib.sha256(password.encode('utf-8')).hexdigest()
